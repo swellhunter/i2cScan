@@ -12,7 +12,9 @@
   https://github.com/SpenceKonde/ATTinyCore
   add the following URL to boards manager:
   http://drazzy.com/package_drazzy.com_index.json
-*****************************************************/
+  
+  see also : nickgammon/SendOnlySoftwareSerial
+ *****************************************************/
 #include <Wire.h>
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(7, 1); // RX (out of range), TX
