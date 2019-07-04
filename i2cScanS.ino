@@ -29,6 +29,7 @@ void setup() {
   Wire.begin();
   mySerial.begin(9600);
   delay(1000);
+  preamble();
 }
 
 /*
