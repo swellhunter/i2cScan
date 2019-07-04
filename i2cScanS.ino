@@ -81,10 +81,11 @@ void loop() {
   else {
     mySerial.print(F("Scan done."));
   }
+  
   endLCDWrite();
-
   delay(4000);
 }
+
 
 void clear_lcd(void) {
   mySerial.write(0xAA);
@@ -114,7 +115,6 @@ void endLCDWrite(void) {
 /*
  * Things in setup() best abstracted
  */
-
 void preamble(void) {
   mySerial.write(0xAA);               // Hardware info.
   mySerial.write((uint8_t)0x00);
