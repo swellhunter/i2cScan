@@ -1,7 +1,10 @@
 /****************************************************
   https://github.com/swellhunter/i2cScan
-  i2cScan - Ripped off from Arduino Playground
+  i2cScanS - Ripped off from Arduino Playground
   Adapted for ATTiny45/85 with UART LCD or terminal.
+  This version specifically for RSI1602***-00
+  See https://share.weiyun.com/5if7UNG
+   
   ___    +---v---+
   RST   1|o      |8  VCC
   XTAL  2|       |7  SCL  *
