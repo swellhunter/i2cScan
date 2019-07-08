@@ -2,8 +2,8 @@
   https://github.com/swellhunter/i2cScan
   i2cScanS - Ripped off from Arduino Playground
   Adapted for ATTiny45/85 with UART LCD or terminal.
-  This version specifically for RSI1602***-00
-  See https://share.weiyun.com/5if7UNG
+  This version specifically for the raylid RSI1602
+  http://www.raylid.com/index.php/News/view/id/25.html
    
   ___    +---v---+
   RST   1|o      |8  VCC
@@ -95,7 +95,11 @@ void clear_lcd(void) {
   mySerial.write(0x10);
 }
 
-
+/*
+   Rather than wrap everything, just initiate
+   and terminate, so can use native code in between.
+   We might even call this with a Macro.
+*/
 void beginLCDWrite(unsigned char r, unsigned c) {
   mySerial.write(0xAA);
   mySerial.write(0x20);
