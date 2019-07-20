@@ -2,12 +2,12 @@
   https://github.com/swellhunter/i2cScan
   i2cScanS - Ripped off from Arduino Playground
   Adapted for ATTiny45/85 with UART LCD or terminal.
-  This version specifically for the raylid RSI1602
+  This version specifically for the raylid RSI 1602
   http://www.raylid.com/index.php/News/view/id/25.html
    
   ___    +---v---+
   RST   1|o      |8  VCC
-  XTAL  2|       |7  SCL  *
+  XTAL  2|       |7  SCL  *       
   XTAL  3|       |6  TX   *
   GND   4|       |5  SDA  *
          +-------+
@@ -20,6 +20,11 @@
 #include <Wire.h>
 
 #include <SendOnlySoftwareSerial.h>
+
+/* Be aware that this is the same pin
+ * as UART Tx on Nano et al. 
+ */
+
 SendOnlySoftwareSerial mySerial (1);  // Tx pin
 
 //#include <SoftwareSerial.h>
@@ -31,7 +36,7 @@ SendOnlySoftwareSerial mySerial (1);  // Tx pin
 void setup() {
   Wire.begin();
   mySerial.begin(9600);
-  delay(1000);
+  delay(5000);
   preamble();
 }
 
@@ -48,6 +53,8 @@ void loop() {
   beginLCDWrite(0, 0);
   mySerial.print(F("Scanning..."));
   endLCDWrite();
+
+  delay(2000);
 
   nDevices = 0;
 
@@ -70,7 +77,7 @@ void loop() {
       if (address < 16) mySerial.print(F("0"));
       mySerial.print(address, HEX);
       endLCDWrite();
-      delay(4000);
+      delay(6000);
     }
     
   }
@@ -86,7 +93,7 @@ void loop() {
   }
   
   endLCDWrite();
-  delay(4000);
+  delay(2000);
 }
 
 
@@ -125,14 +132,14 @@ void endLCDWrite(void) {
 void preamble(void) {
   mySerial.write(0xAA);               // Hardware info.
   mySerial.write((uint8_t)0x00);
-  delay(1000);
+  delay(3000);
   clear_lcd();
   beginLCDWrite(0, 0);
   mySerial.print(F("*** I2C Scan ***"));
   endLCDWrite();
-  delay(500);
+  delay(2000);
   beginLCDWrite(1, 0);
   mySerial.print(F("... stand by ..."));
   endLCDWrite();
-  delay(500);
+  delay(2000);
 }
