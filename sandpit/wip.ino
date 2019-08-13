@@ -7,7 +7,7 @@
   XTAL  2|       |7  SCL  * two wire serial clock needs pull-up
   XTAL  3|       |6  TX   * UART serial out
   GND   4|       |5  SDA  * two wire serial data needs pull-up
-        +-------+
+         +-------+
   Requires :
   https://github.com/nickgammon/SendOnlySoftwareSerial
   https://github.com/SpenceKonde/ATTinyCore
@@ -190,6 +190,12 @@ void brightness(unsigned short x) {
 void reboot2() {
 #if defined (__AVR_ATtiny85__)
   cli();
+  // WDIF = TRUE    refer "Watchdog Timer Control Register"
+  // WDIE = TRUE
+  // WDP3   not set
+  // WDCE = TRUE
+  // WDE  = TRUE
+  // WDP2,WDP1,WDP0 = 110
   WDTCR = 0xD8 | WDTO_1S;
   sei();
   wdt_reset();
