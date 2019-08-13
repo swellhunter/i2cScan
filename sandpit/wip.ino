@@ -1,7 +1,7 @@
 /****************************************************
   https://github.com/swellhunter/i2cScan
   i2cScan - Ripped off from Arduino Playground
-  Adapted for ATTiny45/85 with UART LCD or terminal.
+  Adapted for ATTiny85 with UART LCD or terminal.
   ___    +---v---+
   RST   1|o      |8  VCC
   XTAL  2|       |7  SCL  * two wire serial clock needs pull-up
