@@ -34,8 +34,9 @@ reset: ldi     r16, low (RAMEND)
        rcall   WDT_off       ; Disable WDT
        sei                   ; Enable interrupts
 
+       ldi     r16,0b00000011
+       out     ddrb,r16      ; PB0, PB1 as output
        ldi     r16,1
-       out     ddrb,r16      ; PB0 as output
        out     portb,r16     ; the LED is on, dude
 
        ;-------------------------------------------------
@@ -55,6 +56,7 @@ loop:  rcall   halfcycle
 ;      ldi     r16, 0b11111001 ;8s
        out     WDTCR, r16
        rcall   init1
+;      rjmp    reset
        rjmp    PC            ; forever
 
 data:  .db 0xAA, 0x20, 0, 0, 0xAA, 0x25, "Hello World", 0x0D
@@ -63,7 +65,7 @@ init1: push    r0
        push    r16
        push    r30
        push    r31
-       ldi     r16,17                ; 18 bytes of data
+       ldi     r16,18                ; 18 bytes of data
        ldi     ZH,high(data << 1)
        ldi     ZL,low (data << 1)
 msg:   lpm     r0,Z+
