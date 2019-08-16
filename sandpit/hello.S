@@ -61,7 +61,9 @@ loop:  rcall   halfcycle
 
 data:  .db 0xAA, 0x20, 0, 0, 0xAA, 0x25, "Hello World", 0x0D
 
-init1: push    r0
+init1: push r15
+       in      r15, SREG
+       push    r0
        push    r16
        push    r30
        push    r31
@@ -76,9 +78,13 @@ msg:   lpm     r0,Z+
        pop     r30
        pop     r16
        pop     r0
+       out     SREG, r15   
+       pop r15
        ret
 
 WDT_off:       ; from the datasheet, largely   
+       push    r15
+       in      r15, SREG           ;stash it.
        push    r16
        wdr
        ldi     r16, (0<<WDRF)
@@ -92,9 +98,12 @@ WDT_off:       ; from the datasheet, largely
        ldi     r16, (0<<WDE) ; Turn off WDT
        out     WDTCR, r16
        pop     r16
-       ret
+       out     SREG, r15      ; restore it 
+       ret     pop r15
 
 halfcycle:
+       push    r15
+       in      r15, SREG           ;stash it.
        push    r24
        push    r25
        clr     r24
@@ -104,6 +113,8 @@ halfcycle:
        sbi     pinb,pinb0    ; toggle the LED state
        pop     r25
        pop     r24
+       out     SREG, r15      ; restore it 
+       ret     pop r15
        ret
 
 EXT_INT0:      ; IRQ0 Handler
