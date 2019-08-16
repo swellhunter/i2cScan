@@ -61,7 +61,7 @@ loop:  rcall   halfcycle
 
 data:  .db 0xAA, 0x20, 0, 0, 0xAA, 0x25, "Hello World", 0x0D
 
-init1: push r15
+init1: push    r15
        in      r15, SREG
        push    r0
        push    r16
@@ -79,7 +79,7 @@ msg:   lpm     r0,Z+
        pop     r16
        pop     r0
        out     SREG, r15   
-       pop r15
+       pop     r15
        ret
 
 WDT_off:       ; from the datasheet, largely   
