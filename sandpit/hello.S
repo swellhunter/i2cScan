@@ -99,7 +99,8 @@ WDT_off:       ; from the datasheet, largely
        out     WDTCR, r16
        pop     r16
        out     SREG, r15      ; restore it 
-       ret     pop r15
+       pop     r15
+       ret
 
 halfcycle:
        push    r15
