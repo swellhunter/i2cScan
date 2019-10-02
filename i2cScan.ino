@@ -19,7 +19,7 @@
 #include <SendOnlySoftwareSerial.h>
 SendOnlySoftwareSerial mySerial (1);  // Tx pin
 
-//#include <SoftwareSerial.h>
+//#include <SoftwaremySerial.h>
 //SoftwareSerial serial(7, 1); // RX (out of range), TX
 
 /*
@@ -30,7 +30,20 @@ void setup() {
   brightness(63);
   Wire.begin();
   delay(1000);
+
+  clear_lcd();
+  beginLCDWrite(0, 0);
+  mySerial.print(F("RAMEND : 0x0"));
+  mySerial.print(RAMEND, HEX);
+  endLCDWrite();
+  beginLCDWrite(1, 0);
+  mySerial.print(F("Stack  : 0x0"));
+  mySerial.print(SP, HEX);
+  endLCDWrite();
+
+  delay(8000);
   preamble();
+
 }
 
 /*
@@ -79,6 +92,7 @@ void loop() {
       endLCDWrite();
       nDevices++;
       delay(2000);
+      clear_lcd_line2();
     }
     else if (error == 4) {
       beginLCDWrite(1, 0);
@@ -87,8 +101,8 @@ void loop() {
       mySerial.print(address, HEX);
       endLCDWrite();
       delay(4000);
+      clear_lcd_line2();
     }
-
   }
 
   if (nDevices == 0) {
@@ -113,8 +127,11 @@ void loop() {
   }
 
   endLCDWrite();
+  delay(8000);
+  reminder();
   delay(4000);
-  asm("rjmp 0");
+  reBootTiny85();
+
 }
 
 void clear_lcd(void) {
@@ -122,6 +139,17 @@ void clear_lcd(void) {
   mySerial.write(0x10);
 }
 
+void clear_lcd_line2(void) {
+
+  unsigned short i;
+
+  beginLCDWrite(1, 0);
+  for (i = 0; i < 16; i++) {
+    mySerial.print(F(" "));
+  }
+  endLCDWrite();
+  delay(500);
+}
 
 void beginLCDWrite(unsigned char r, unsigned c) {
   mySerial.write(0xAA);
@@ -164,4 +192,24 @@ void brightness(unsigned short x) {
   mySerial.write(0xAA);
   mySerial.write(0x13);
   mySerial.write(x);
+}
+
+void reBootTiny85() {
+  // Quick, dirty, effective....
+  // This is why people prefer WDT ?
+  SREG  = 0;
+  MCUSR = 0;
+  SP    = RAMEND;
+  asm("rjmp 0");
+}
+
+void reminder(void) {
+  clear_lcd();
+  delay(250);
+  beginLCDWrite(0, 0);
+  mySerial.print(F("** Please -   **"));
+  endLCDWrite();
+  beginLCDWrite(1, 0);
+  mySerial.print(F("** switch off **"));
+  endLCDWrite();
 }
