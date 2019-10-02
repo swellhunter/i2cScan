@@ -19,7 +19,7 @@
 #include <SendOnlySoftwareSerial.h>
 SendOnlySoftwareSerial mySerial (1);  // Tx pin
 
-//#include <SoftwaremySerial.h>
+//#include <SoftwareSerial.h>
 //SoftwareSerial serial(7, 1); // RX (out of range), TX
 
 /*
