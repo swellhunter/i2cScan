@@ -115,7 +115,7 @@ halfcycle:
        pop     r25
        pop     r24
        out     SREG, r15      ; restore it 
-       ret     pop r15
+       pop     r15
        ret
 
 EXT_INT0:      ; IRQ0 Handler
