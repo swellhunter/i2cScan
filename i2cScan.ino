@@ -1,7 +1,7 @@
 /****************************************************
   https://github.com/swellhunter/i2cScan
   i2cScan - Ripped off from Arduino Playground
-  Adapted for ATTiny45/85 with UART LCD or terminal.
+  Adapted for ATTiny85 with UART LCD or terminal.
   ___    +---v---+
   RST   1|o      |8  VCC
   XTAL  2|       |7  SCL  * two wire serial clock
@@ -15,17 +15,15 @@
   http://drazzy.com/package_drazzy.com_index.json
 ******************************************************/
 #include <Wire.h>
-
+#include <avr/wdt.h>
 #include <SendOnlySoftwareSerial.h>
+
 SendOnlySoftwareSerial mySerial (1);  // Tx pin
 
-//#include <SoftwaremySerial.h>
-//SoftwareSerial serial(7, 1); // RX (out of range), TX
-
-/*
-   This is the standard "run once" routine.
-*/
+// This is the standard "run once" routine.
 void setup() {
+  // https://bigdanzblog.wordpress.com/2015/07/20/resetting-rebooting-attiny85-with-watchdog-timer-wdt/
+  wdt_disable();
   mySerial.begin(9600);
   brightness(63);
   Wire.begin();
@@ -46,10 +44,7 @@ void setup() {
 
 }
 
-/*
-   This is the endless loop body
-*/
-
+// This is the endless loop body
 void loop() {
 
   byte error, address;
@@ -59,21 +54,12 @@ void loop() {
 
   clear_lcd();
   beginLCDWrite(0, 0);
-  //mySerial.print(F("Scanning... 0x"));
   mySerial.print(F("Scanning...   "));
   endLCDWrite();
 
   nDevices = 0;
 
   for (address = 1; address < 128; address++) {
-
-    //   beginLCDWrite(0, 14);
-    //   if (address < 16){
-    //     mySerial.print(F("0"));
-    //   }
-    //   mySerial.print(address, HEX);
-    //   endLCDWrite();
-    //   delay(100);
 
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
@@ -130,7 +116,7 @@ void loop() {
   delay(8000);
   reminder();
   delay(4000);
-  reBootTiny85();
+  reboot2();
 
 }
 
@@ -194,14 +180,14 @@ void brightness(unsigned short x) {
   mySerial.write(x);
 }
 
-void reBootTiny85() {
-  // Quick, dirty, effective....
-  // This is why people prefer WDT ?
-  SREG  = 0;
-  MCUSR = 0;
-  SP    = RAMEND;
-  asm("rjmp 0");
-}
+//void reBootTiny85() {
+// Quick, dirty, effective....
+// This is why people prefer WDT ?
+//  SREG  = 0;
+//  MCUSR = 0;
+//  SP    = RAMEND;
+//  asm("rjmp 0");
+//}
 
 void reminder(void) {
   clear_lcd();
@@ -212,4 +198,24 @@ void reminder(void) {
   beginLCDWrite(1, 0);
   mySerial.print(F("** switch off **"));
   endLCDWrite();
+}
+
+void reboot2() {
+#if defined (__AVR_ATtiny85__)
+  cli();
+  // WDIF = TRUE    refer "Watchdog Timer Control Register"
+  // WDIE = TRUE
+  // WDP3   not set
+  // WDCE = TRUE
+  // WDE  = TRUE
+  // WDP2,WDP1,WDP0 = 110
+  WDTCR = 0xD8 | WDTO_1S;
+  sei();
+  wdt_reset();
+#else
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+#endif
+  // trap the sparks and wait.
+  while (true) {}
 }
