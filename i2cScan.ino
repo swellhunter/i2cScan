@@ -161,7 +161,7 @@ void clear_LCD(void) {
 // usual convention for serLCD displays? (reversed?).
 // Also not that unusual for serial communication to have
 // have beginTransmission..endTransmission.
-void beginLCDWrite(unsigned char r, unsigned c) {
+void beginLCDWrite(uint8_t r, uint8_t c) {
   serLCD.write(0xAA);
   serLCD.write(0x20);
   serLCD.write(r);
