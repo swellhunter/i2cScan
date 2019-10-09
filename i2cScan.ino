@@ -1,7 +1,7 @@
 /****************************************************
   https://github.com/swellhunter/i2cScan
   i2cScan - Ripped off from Arduino Playground
-  Adapted for ATTiny85 with RayLid UART serLCD.
+  Adapted for ATTiny85 with RayLid UART LCD.
   ___    +---v---+
   RST   1|o      |8  VCC
   XTAL  2|       |7  SCL  * two wire serial clock
@@ -11,7 +11,7 @@
   Requires :
   https://github.com/nickgammon/SendOnlySoftwareSerial
   https://github.com/SpenceKonde/ATTinyCore
-  Raylid RSI1602***-00 16*02 UART serLCD display.
+  Raylid RSI1602***-00 16*02 UART LCD display.
   (from Ebay user surenoo)
   2 x 4.7KΩ pull up resistors for IIC lines.
   Physical switch for power on and off.
@@ -24,7 +24,7 @@ SendOnlySoftwareSerial serLCD(1);  // Tx pin
 
 void setup() {
   serLCD.begin(9600);
-  brightness_serLCD(63);
+  brightness_LCD(63);
   Wire.begin();
   delay(1000);
   preamble();
@@ -37,10 +37,10 @@ void loop() {
   char all[17] = "";
   char buff[3] = "";
 
-  clear_serLCD();
-  beginserLCDWrite(0, 0);
+  clear_LCD();
+  beginLCDWrite(0, 0);
   serLCD.print(F("Scanning...   "));
-  endserLCDWrite();
+  endLCDWrite();
 
   nDevices = 0;
 
@@ -58,7 +58,7 @@ void loop() {
       sprintf(buff, "%02X", address);
       strcat(all, buff);
 
-      beginserLCDWrite(1, 0);
+      beginLCDWrite(1, 0);
       serLCD.print(F("Found 0x"));
 
       if (address < 16) {
@@ -66,40 +66,42 @@ void loop() {
       }
 
       serLCD.print(address, HEX);
-      endserLCDWrite();
+      endLCDWrite();
       nDevices++;
       delay(2000);
-      clear_serLCD_line2();
+      clear_LCD_line2();
     }
 
     else if (error == 4) {
 
       // not good
 
-      beginserLCDWrite(1, 0);
+      beginLCDWrite(1, 0);
       serLCD.print(F("Error at : 0x"));
-      if (address < 16) serLCD.print(F("0"));
+      if (address < 16){
+        serLCD.print(F("0"));
+      }
       serLCD.print(address, HEX);
-      endserLCDWrite();
+      endLCDWrite();
       delay(4000);
-      clear_serLCD_line2();
+      clear_LCD_line2();
     }
   }
 
   if (nDevices == 0) {
-    clear_serLCD();
-    beginserLCDWrite(0, 0);
+    clear_LCD();
+    beginLCDWrite(0, 0);
     serLCD.print(F("No I2C devices!!"));
   }
   else {
     delay(1000);
-    clear_serLCD();
+    clear_LCD();
 
-    beginserLCDWrite(0, 0);
+    beginLCDWrite(0, 0);
     serLCD.print(all);
-    endserLCDWrite();
+    endLCDWrite();
 
-    beginserLCDWrite(1, 0);
+    beginLCDWrite(1, 0);
     serLCD.print(F("Done. "));
     serLCD.print(nDevices);
     serLCD.print(F(" hit"));
@@ -114,23 +116,23 @@ void loop() {
   // this endserLCDWrite() is for both branches above.
   // it may need to be rescoped if more elaborate
   // results blurb logic is required.
-  endserLCDWrite();
+  endLCDWrite();
   delay(8000);
-  clear_serLCD();
+  clear_LCD();
   delay(200);
 }
 
 // Things in setup() best abstracted to declutter the
 // code there and make it more readable.
 void preamble(void) {
-  clear_serLCD();
-  beginserLCDWrite(0, 0);
+  clear_LCD();
+  beginLCDWrite(0, 0);
   serLCD.print(F("*** I2C Scan ***"));
-  endserLCDWrite();
+  endLCDWrite();
   delay(500);
-  beginserLCDWrite(1, 0);
+  beginLCDWrite(1, 0);
   serLCD.print(F("... stand by ..."));
-  endserLCDWrite();
+  endLCDWrite();
   delay(1000);
 }
 
@@ -141,14 +143,14 @@ void preamble(void) {
 // This sets the brightness of the serLCD. Note that the
 // relationship is not that linear. You should test
 // for fixed values on the scale that are useful.
-void brightness_serLCD(unsigned short x) {
+void brightness_LCD(unsigned short x) {
   serLCD.write(0xAA);
   serLCD.write(0x13);
   serLCD.write(x);
 }
 
 // This clears the whole serLCD display.
-void clear_serLCD(void) {
+void clear_LCD(void) {
   serLCD.write(0xAA);
   serLCD.write(0x10);
 }
@@ -159,7 +161,7 @@ void clear_serLCD(void) {
 // usual convention for serLCD displays? (reversed?).
 // Also not that unusual for serial communication to have
 // have beginTransmission..endTransmission.
-void beginserLCDWrite(unsigned char r, unsigned c) {
+void beginLCDWrite(unsigned char r, unsigned c) {
   serLCD.write(0xAA);
   serLCD.write(0x20);
   serLCD.write(r);
@@ -171,21 +173,21 @@ void beginserLCDWrite(unsigned char r, unsigned c) {
 // This terminates the character stream written to the
 // UART serLCD. There should not have been any \n in that
 // stream either.
-void endserLCDWrite(void) {
+void endLCDWrite(void) {
   serLCD.write(0x0D);
 }
 
 // serLCD displays perform at their best when blanked
 // between "shifting in" writes of large clumps of
 // text. This clears the 2nd of 2 lines.
-void clear_serLCD_line2(void) {
+void clear_LCD_line2(void) {
 
   unsigned short i;
 
-  beginserLCDWrite(1, 0);
+  beginLCDWrite(1, 0);
   for (i = 0; i < 16; i++) {
     serLCD.print(F(" "));
   }
-  endserLCDWrite();
+  endLCDWrite();
   delay(500);
 }
