@@ -113,7 +113,7 @@ void loop() {
     serLCD.print(F("."));
   }
 
-  // this endserLCDWrite() is for both branches above.
+  // this endLCDWrite() is for both branches above.
   // it may need to be rescoped if more elaborate
   // results blurb logic is required.
   endLCDWrite();
@@ -136,11 +136,11 @@ void preamble(void) {
   delay(1000);
 }
 
-// serLCD functions, specific to RayLid, these are
+// LCD functions, specific to RayLid, these are
 // few enough to not need a library or separate
-// file.
+// file. Anyway we are using our instance explicitly.
 
-// This sets the brightness of the serLCD. Note that the
+// This sets the brightness of the LCD. Note that the
 // relationship is not that linear. You should test
 // for fixed values on the scale that are useful.
 void brightness_LCD(unsigned short x) {
@@ -149,7 +149,7 @@ void brightness_LCD(unsigned short x) {
   serLCD.write(x);
 }
 
-// This clears the whole serLCD display.
+// This clears the whole LCD display.
 void clear_LCD(void) {
   serLCD.write(0xAA);
   serLCD.write(0x10);
@@ -158,7 +158,7 @@ void clear_LCD(void) {
 // This is the preamble for the UART display to specify
 // that characters for writing to a particular location
 // are to follow. Note order of r,c as may not follow
-// usual convention for serLCD displays? (reversed?).
+// usual convention for LCD displays? (reversed?).
 // Also not that unusual for serial communication to have
 // have beginTransmission..endTransmission.
 void beginLCDWrite(uint8_t r, uint8_t c) {
@@ -171,13 +171,13 @@ void beginLCDWrite(uint8_t r, uint8_t c) {
 }
 
 // This terminates the character stream written to the
-// UART serLCD. There should not have been any \n in that
+// UART LCD. There should not have been any \n in that
 // stream either.
 void endLCDWrite(void) {
   serLCD.write(0x0D);
 }
 
-// serLCD displays perform at their best when blanked
+// LCD displays perform at their best when blanked
 // between "shifting in" writes of large clumps of
 // text. This clears the 2nd of 2 lines.
 void clear_LCD_line2(void) {
@@ -185,9 +185,11 @@ void clear_LCD_line2(void) {
   unsigned short i;
 
   beginLCDWrite(1, 0);
+
   for (i = 0; i < 16; i++) {
     serLCD.print(F(" "));
   }
+
   endLCDWrite();
   delay(500);
 }
