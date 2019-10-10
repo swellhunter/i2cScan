@@ -21,10 +21,14 @@
 
 /* Globals - well "ours" anyway */
 SendOnlySoftwareSerial serLCD(1);  // Tx pin
+unsigned short line1     = 0;
+unsigned short line2     = 1;
+int baud                 = 9600;
+unsigned short intensity = 63;
 
 void setup() {
-  serLCD.begin(9600);
-  brightness_LCD(63);
+  serLCD.begin(baud);
+  brightness_LCD(intensity);
   Wire.begin();
   delay(1000);
   preamble();
@@ -38,7 +42,7 @@ void loop() {
   char buff[3] = "";
 
   clear_LCD();
-  beginLCDWrite(0, 0);
+  beginLCDWrite(line1, 0);
   serLCD.print(F("Scanning...   "));
   endLCDWrite();
 
@@ -58,7 +62,7 @@ void loop() {
       sprintf(buff, "%02X", address);
       strcat(all, buff);
 
-      beginLCDWrite(1, 0);
+      beginLCDWrite(line2, 0);
       serLCD.print(F("Found 0x"));
 
       if (address < 16) {
@@ -76,7 +80,7 @@ void loop() {
 
       // not good
 
-      beginLCDWrite(1, 0);
+      beginLCDWrite(line2, 0);
       serLCD.print(F("Error at : 0x"));
       if (address < 16){
         serLCD.print(F("0"));
@@ -90,14 +94,14 @@ void loop() {
 
   if (nDevices == 0) {
     clear_LCD();
-    beginLCDWrite(0, 0);
+    beginLCDWrite(line1, 0);
     serLCD.print(F("No I2C devices!!"));
   }
   else {
     delay(1000);
     clear_LCD();
 
-    beginLCDWrite(0, 0);
+    beginLCDWrite(line1, 0);
     serLCD.print(all);
     endLCDWrite();
 
@@ -122,23 +126,29 @@ void loop() {
   delay(200);
 }
 
+//---------------------------------------------------
+// functions and subroutines follow...
+//----------------------------------------------------
+
 // Things in setup() best abstracted to declutter the
 // code there and make it more readable.
 void preamble(void) {
   clear_LCD();
-  beginLCDWrite(0, 0);
+  beginLCDWrite(line1, 0);
   serLCD.print(F("*** I2C Scan ***"));
   endLCDWrite();
   delay(500);
-  beginLCDWrite(1, 0);
+  beginLCDWrite(line1, 0);
   serLCD.print(F("... stand by ..."));
   endLCDWrite();
   delay(1000);
 }
 
+//---------------------------------------------------
 // LCD functions, specific to RayLid, these are
 // few enough to not need a library or separate
 // file. Anyway we are using our instance explicitly.
+//----------------------------------------------------
 
 // This sets the brightness of the LCD. Note that the
 // relationship is not that linear. You should test
@@ -184,7 +194,7 @@ void clear_LCD_line2(void) {
 
   unsigned short i;
 
-  beginLCDWrite(1, 0);
+  beginLCDWrite(line2, 0);
 
   for (i = 0; i < 16; i++) {
     serLCD.print(F(" "));
