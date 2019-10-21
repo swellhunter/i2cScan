@@ -23,8 +23,9 @@
 SendOnlySoftwareSerial serLCD(1);  // Tx pin
 unsigned short line1     = 0;
 unsigned short line2     = 1;
-int baud                 = 9600;
+unsigned int   baud      = 9600;
 unsigned short intensity = 63;
+unsigned short loopcount = 0;
 
 void setup() {
   serLCD.begin(baud);
@@ -40,6 +41,13 @@ void loop() {
   int nDevices;
   char all[17] = "";
   char buff[3] = "";
+
+  loopcount++;
+  
+  if (loopcount > 2){
+    loopcount = 0;
+    reboot();
+  }
 
   clear_LCD();
   beginLCDWrite(line1, 0);
@@ -57,8 +65,13 @@ void loop() {
 
       // knock was answered
 
-      if (nDevices) strcat(all, ",");
-      strcat(all, "0x");
+      if (nDevices) {
+        strcat(all, ",");
+      }
+      else{
+        strcat(all, "0x");
+      }
+  
       sprintf(buff, "%02X", address);
       strcat(all, buff);
 
@@ -138,10 +151,17 @@ void preamble(void) {
   serLCD.print(F("*** I2C Scan ***"));
   endLCDWrite();
   delay(500);
-  beginLCDWrite(line1, 0);
+  beginLCDWrite(line2, 0);
   serLCD.print(F("... stand by ..."));
   endLCDWrite();
   delay(1000);
+}
+
+void reboot(void){
+  SREG  = 0;
+  MCUSR = 0; 
+  SP    = RAMEND;
+  asm("RJMP 0");
 }
 
 //---------------------------------------------------
@@ -165,10 +185,10 @@ void clear_LCD(void) {
   serLCD.write(0x10);
 }
 
-// This is the preamble for the UART display to specify
-// that characters for writing to a particular location
-// are to follow. Note order of r,c as may not follow
-// usual convention for LCD displays? (reversed?).
+// These are the control characters for the UART display 
+// to specify that characters for writing to a particular
+// location are to follow. Note order of r,c as may not 
+// follow the usual convention for LCD displays? (reversed?).
 // Also not that unusual for serial communication to have
 // have beginTransmission..endTransmission.
 void beginLCDWrite(uint8_t r, uint8_t c) {
