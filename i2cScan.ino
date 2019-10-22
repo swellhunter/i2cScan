@@ -17,6 +17,7 @@
   Physical switch for power on and off.
 ******************************************************/
 #include <Wire.h>
+#include <avr/wdt.h>
 #include <SendOnlySoftwareSerial.h>
 
 /* Globals - well "ours" anyway */
@@ -28,6 +29,7 @@ unsigned short intensity = 63;
 unsigned short loopcount = 0;
 
 void setup() {
+  wdt_disable();
   serLCD.begin(baud);
   brightness_LCD(intensity);
   Wire.begin();
@@ -43,8 +45,8 @@ void loop() {
   char buff[3] = "";
 
   loopcount++;
-  
-  if (loopcount > 2){
+
+  if (loopcount > 2) {
     loopcount = 0;
     reboot();
   }
@@ -68,10 +70,10 @@ void loop() {
       if (nDevices) {
         strcat(all, ",");
       }
-      else{
+      else {
         strcat(all, "0x");
       }
-  
+
       sprintf(buff, "%02X", address);
       strcat(all, buff);
 
@@ -85,7 +87,7 @@ void loop() {
       serLCD.print(address, HEX);
       endLCDWrite();
       nDevices++;
-      delay(2000);
+      delay(1500);
       clear_LCD_line2();
     }
 
@@ -95,7 +97,7 @@ void loop() {
 
       beginLCDWrite(line2, 0);
       serLCD.print(F("Error at : 0x"));
-      if (address < 16){
+      if (address < 16) {
         serLCD.print(F("0"));
       }
       serLCD.print(address, HEX);
@@ -150,18 +152,36 @@ void preamble(void) {
   beginLCDWrite(line1, 0);
   serLCD.print(F("*** I2C Scan ***"));
   endLCDWrite();
-  delay(500);
+  delay(1000);
   beginLCDWrite(line2, 0);
   serLCD.print(F("... stand by ..."));
   endLCDWrite();
-  delay(1000);
+  delay(2000);
 }
 
-void reboot(void){
-  SREG  = 0;
-  MCUSR = 0; 
-  SP    = RAMEND;
-  asm("RJMP 0");
+// Supposedly the definitive way to reboot an ATTiny85
+// cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
+// Not really essential, but revisits startup routines
+// and causes initial information to redisplay.
+void reboot(void) {
+#if defined (__AVR_ATtiny85__)
+  cli();
+  // refer "Watchdog Timer Control Register"
+  // WDIF = TRUE        actually clears it
+  // WDIE = TRUE
+  // WDP3 = 0           using order in reference
+  // WDCE = TRUE
+  // WDE  = TRUE
+  // WDP2,WDP1,WDP0 = 110
+  WDTCR = 0xD8 | WDTO_1S;
+  sei();
+  wdt_reset();
+#else
+  syntax error
+//  wdt_enable(WDTO_15MS);
+#endif
+  // trap the sparks and wait.
+  while (true) {}
 }
 
 //---------------------------------------------------
@@ -185,9 +205,9 @@ void clear_LCD(void) {
   serLCD.write(0x10);
 }
 
-// These are the control characters for the UART display 
+// These are the control characters for the UART display
 // to specify that characters for writing to a particular
-// location are to follow. Note order of r,c as may not 
+// location are to follow. Note order of r,c as may not
 // follow the usual convention for LCD displays? (reversed?).
 // Also not that unusual for serial communication to have
 // have beginTransmission..endTransmission.
