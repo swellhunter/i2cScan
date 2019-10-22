@@ -16,6 +16,12 @@
   2 x 4.7KΩ pull up resistors for IIC lines.
   Physical switch for power on and off.
 ******************************************************/
+
+/* Includes */
+// ATTiny85 will require pull up resistors,
+// but said resistors will cause hang after
+// programming. Device needs to be reset
+// or cycled after programming to run.
 #include <Wire.h>
 #include <avr/wdt.h>
 #include <SendOnlySoftwareSerial.h>
@@ -178,7 +184,7 @@ void reboot(void) {
   wdt_reset();
 #else
   syntax error
-//  wdt_enable(WDTO_15MS);
+  //  wdt_enable(WDTO_15MS);
 #endif
   // trap the sparks and wait.
   while (true) {}
