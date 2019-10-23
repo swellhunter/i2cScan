@@ -170,24 +170,11 @@ void preamble(void) {
 // Not really essential, but revisits startup routines
 // and causes initial information to redisplay.
 void reboot(void) {
-#if defined (__AVR_ATtiny85__)
-  cli();
-  // refer "Watchdog Timer Control Register"
-  // WDIF = TRUE        actually clears it
-  // WDIE = TRUE
-  // WDP3 = 0           using order in reference
-  // WDCE = TRUE
-  // WDE  = TRUE
-  // WDP2,WDP1,WDP0 = 110
-  WDTCR = 0xD8 | WDTO_1S;
-  sei();
-  wdt_reset();
-#else
-  syntax error
-  //  wdt_enable(WDTO_15MS);
-#endif
-  // trap the sparks and wait.
-  while (true) {}
+  cli();                        // suppress interrupts when touching WDIF  
+  WDTCR = 0b11011000 | WDTO_1S; // refer "Watchdog Timer Control Register"
+  sei();                        // interrupts back on 
+  wdt_reset();                  // can't hurt ?   
+  while (true) {}               // trap the sparks and wait.
 }
 
 //---------------------------------------------------
