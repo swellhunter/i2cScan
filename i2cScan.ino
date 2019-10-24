@@ -35,6 +35,9 @@ unsigned short intensity = 63;
 unsigned short loopcount = 0;
 
 void setup() {
+  wdt_reset();
+  // Spence Konde recommends, could save first.
+  MCUSR &= ~(1 << WDRF);
   wdt_disable();
   serLCD.begin(baud);
   brightness_LCD(intensity);
@@ -154,6 +157,7 @@ void loop() {
 // Things in setup() best abstracted to declutter the
 // code there and make it more readable.
 void preamble(void) {
+  id_LCD();
   clear_LCD();
   beginLCDWrite(line1, 0);
   serLCD.print(F("*** I2C Scan ***"));
@@ -170,11 +174,13 @@ void preamble(void) {
 // Not really essential, but revisits startup routines
 // and causes initial information to redisplay.
 void reboot(void) {
-  cli();                        // suppress interrupts when touching WDIF  
-  WDTCR = 0b11011000 | WDTO_1S; // refer "Watchdog Timer Control Register"
-  sei();                        // interrupts back on 
-  wdt_reset();                  // can't hurt ?   
-  while (true) {}               // trap the sparks and wait.
+  cli();                        // suppress interrupts when touching WDIF
+  // (WD)IF  IE  P3  CE  DE  P2  P1  P0            refer "Watchdog Timer
+  //      1   1   0   1   1   0   0   0            Control Register"
+  WDTCR = 0b11011000 | WDTO_1S; // (WDTO_1S = 6 = 110)
+  sei();                        // interrupts back on
+  wdt_reset();                  // not needed if we are forcing it?
+  while (true) {}               // trap the PC and wait.
 }
 
 //---------------------------------------------------
@@ -235,4 +241,10 @@ void clear_LCD_line2(void) {
 
   endLCDWrite();
   delay(500);
+}
+
+void id_LCD(void) {
+  serLCD.write(0xAA);
+  serLCD.write((uint8_t)0);
+  delay(2000);
 }
