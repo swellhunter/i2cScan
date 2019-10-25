@@ -35,11 +35,14 @@
 // Still need to test for "one punch" effectiveness ala bigdanzblog. 
 // https://bigdanzblog.wordpress.com/2015/07/20/resetting-rebooting-attiny85-with-watchdog-timer-wdt/
 // 15 Years and nobody has fixed this.
+// Of course it would be a lot simpler, but less portable to redefine WDTO_4S and WDTO_8S
 
 //    in Rnn,SREG                          ; stash SREG
 //    cli                                  ; disable interrupts
 //    wdr                                  ; watchdog reset
-//    out WDTCR, 0b11011000                ; change enable "0xD8", redundant?
+// ;    WDIF  WDIE  WDP3  WDCE  WDE  WDP2  WDP1  WDP0    refer "Watchdog Timer
+// ;      1     1     0     1     1    0     0     0     Control Register"
+//    out WDTCR, 0b11011000                ; change enable "0xD8", redundant? 4 x _BV() maybe ?
 //    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9, see wdt.h, datasheet 
 //    out SREG,  Rnn ; restore SREG        ; put SREG back
 
@@ -48,10 +51,12 @@ __asm__ __volatile__ ( \
     "in __tmp_reg__,__SREG__" "\n\t"  \
     "cli" "\n\t"  \
     "wdr" "\n\t"  \
+    "out %[WDTREG],%[SIGNATURE]" "\n\t"  \
     "out %[WDTREG],%[WDVALUE]" "\n\t"  \
     "out __SREG__,__tmp_reg__" "\n\t"  \
     : /* no outputs */  \
-    : [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
+    : [SIGNATURE] "r" ((uint8_t)0xD8), \
+      [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
       [WDVALUE] "r" ((uint8_t)(0xD8 \
       | (value & 0x08 ? _WD_PS3_MASK : 0x00) \
       | _BV(WDE) | (value & 0x07) )) \
