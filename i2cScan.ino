@@ -18,7 +18,7 @@
 ******************************************************/
 
 /* Includes */
-// ATTiny85 will require pull up resistors,
+// ATTiny85 will require pull-up resistors,
 // but said resistors will cause hang after
 // programming. Device needs to be reset
 // or cycled after programming to run.
@@ -34,6 +34,8 @@ unsigned int   baud      = 9600;
 unsigned short intensity = 63;
 unsigned short loopcount = 0;
 
+// This is the ubiquitous Arduino setup function
+// It is called once per reboot.  
 void setup() {
   wdt_reset();
   // Spence Konde recommends, could save first.
@@ -46,17 +48,23 @@ void setup() {
   preamble();
 }
 
+// And this is the main Arduino loop that is 
+// executed indefinitely, the stack is already 
+// down about 8 bytes when we get in here.
 void loop() {
 
   byte error, address;
   int nDevices;
-  char all[17] = "";
-  char buff[3] = "";
+  char all[17] = ""; // one whole line, right ?
+  char buff[3] = ""; // hold two hex characters.
 
-  loopcount++;
+  loopcount++;       // do it here, not miles away. 
 
-  if (loopcount > 2) {
-    loopcount = 0;
+  // In theory we have a spare PortB pin to run 
+  // a piezo buzzer to remind people to switch 
+  // off after 4 cycles, ala fridge door and 
+  // then reset after a delay.  
+  if (loopcount > 4) {
     reboot();
   }
 
@@ -72,11 +80,9 @@ void loop() {
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
 
-    if (error == 0) {
+    if (error == 0) { // knock was answered
 
-      // knock was answered
-
-      if (nDevices) {
+      if (nDevices) { // separate with commas
         strcat(all, ",");
       }
       else {
@@ -100,10 +106,7 @@ void loop() {
       clear_LCD_line2();
     }
 
-    else if (error == 4) {
-
-      // not good
-
+    else if (error == 4) {   // not good
       beginLCDWrite(line2, 0);
       serLCD.print(F("Error at : 0x"));
       if (address < 16) {
@@ -173,14 +176,20 @@ void preamble(void) {
 // cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
 // Not really essential, but revisits startup routines
 // and causes initial information to redisplay.
+// Could also tie a spare output pin to reset....
+// Also could just trap the sparks and have a button?
 void reboot(void) {
   cli();                        // suppress interrupts when touching WDIF
   // (WD)IF  IE  P3  CE  DE  P2  P1  P0            refer "Watchdog Timer
   //      1   1   0   1   1   0   0   0            Control Register"
   WDTCR = 0b11011000 | WDTO_1S; // (WDTO_1S = 6 = 110)
+  // Now, we need to follow up if that WDTO value has "taken" and make
+  // sure it is not just using the old one ? Changes are supposed to be
+  // a multi-step process? Further, after 15 years or more why does the 
+  // stock wdt.h not work? Anybody?  The above approach from bigdanzblog.
   sei();                        // interrupts back on
   wdt_reset();                  // not needed if we are forcing it?
-  while (true) {}               // trap the PC and wait.
+  while (true) {}               // trap the PC (sparks?) and wait.
 }
 
 //---------------------------------------------------
@@ -243,8 +252,12 @@ void clear_LCD_line2(void) {
   delay(500);
 }
 
+// Dump model and version (if any) of the LCD
+// display. Obviously we can see the colour,
+// and we know it is UART. The "K" means the 
+// keyboard/pad inputs will work (wasted here).
 void id_LCD(void) {
   serLCD.write(0xAA);
-  serLCD.write((uint8_t)0);
+  serLCD.write((uint8_t)0);  // note the "cast".
   delay(2000);
 }
