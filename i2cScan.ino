@@ -33,13 +33,14 @@
 // There is no "good" wdt_enable() defined in avr/wdt.h 
 // See WDTCR section in datasheet for the 'x' values.
 // Still need to test for "one punch" effectiveness ala bigdanzblog. 
+// https://bigdanzblog.wordpress.com/2015/07/20/resetting-rebooting-attiny85-with-watchdog-timer-wdt/
 // 15 Years and nobody has fixed this.
 
 //    in Rnn,SREG                          ; stash SREG
 //    cli                                  ; disable interrupts
 //    wdr                                  ; watchdog reset
-//    out WDTCR, 0b11011000                ; change enable "0xD8"
-//    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9
+//    out WDTCR, 0b11011000                ; change enable "0xD8", redundant?
+//    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9, see wdt.h, datasheet 
 //    out SREG,  Rnn ; restore SREG        ; put SREG back
 
 #define wdt_enable(value) \
