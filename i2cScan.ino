@@ -32,7 +32,7 @@
 // Alrighty then. ATTiny85 does not have a CCP register.
 // There is no "good" wdt_enable() defined in avr/wdt.h 
 // See WDTCR section in datasheet for the 'x' values.
-// Still need to test for "one punch" effectiveness ala bigdanzblog. 
+// Still need to test for "one punch" effectiveness ala bigdanzblog. Datasheet concerns disable.
 // https://bigdanzblog.wordpress.com/2015/07/20/resetting-rebooting-attiny85-with-watchdog-timer-wdt/
 // 15 Years and nobody has fixed this.
 // Of course it would be a lot simpler, but less portable to redefine WDTO_4S and WDTO_8S
