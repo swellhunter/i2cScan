@@ -24,6 +24,39 @@
 // or cycled after programming to run.
 #include <Wire.h>
 #include <avr/wdt.h>
+
+#ifdef wdt_enable
+   #undef wdt_enable
+#endif
+
+// Alrighty then. ATTiny85 does not have a CCP register.
+// There is no "good" wdt_enable() defined in avr/wdt.h 
+// See WDTCR section in datasheet for the 'x' values.
+// Still need to test for "one punch" effectiveness ala bigdanzblog. 
+// 15 Years and nobody has fixed this.
+
+//    in Rnn,SREG                          ; stash SREG
+//    cli                                  ; disable interrupts
+//    wdr                                  ; watchdog reset
+//    out WDTCR, 0b11011000                ; change enable "0xD8"
+//    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9
+//    out SREG,  Rnn ; restore SREG        ; put SREG back
+
+#define wdt_enable(value) \
+__asm__ __volatile__ ( \
+    "in __tmp_reg__,__SREG__" "\n\t"  \
+    "cli" "\n\t"  \
+    "wdr" "\n\t"  \
+    "out %[WDTREG],%[WDVALUE]" "\n\t"  \
+    "out __SREG__,__tmp_reg__" "\n\t"  \
+    : /* no outputs */  \
+    : [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
+      [WDVALUE] "r" ((uint8_t)(0xD8 \
+      | (value & 0x08 ? _WD_PS3_MASK : 0x00) \
+      | _BV(WDE) | (value & 0x07) )) \
+    : "r16" \
+)
+
 #include <SendOnlySoftwareSerial.h>
 
 /* Globals - well "ours" anyway */
