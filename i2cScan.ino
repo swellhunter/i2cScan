@@ -37,14 +37,17 @@
 // 15 Years and nobody has fixed this.
 // Of course it would be a lot simpler, but less portable to redefine WDTO_4S and WDTO_8S
 
+// WDIF  WDIE  WDP3  WDCE  WDE  WDP2  WDP1  WDP0    refer "Watchdog Timer
+//   1     1     0     1     1    0     0     0     Control Register"
+
+//---------------------------------------------------------------------------------------------------
 //    in Rnn,SREG                          ; stash SREG
 //    cli                                  ; disable interrupts
 //    wdr                                  ; watchdog reset
-// ;    WDIF  WDIE  WDP3  WDCE  WDE  WDP2  WDP1  WDP0    refer "Watchdog Timer
-// ;      1     1     0     1     1    0     0     0     Control Register"
 //    out WDTCR, 0b11011000                ; change enable "0xD8", redundant? 4 x _BV() maybe ?
 //    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9, see wdt.h, datasheet 
 //    out SREG,  Rnn ; restore SREG        ; put SREG back
+//---------------------------------------------------------------------------------------------------
 
 #define wdt_enable(value) \
 __asm__ __volatile__ ( \
