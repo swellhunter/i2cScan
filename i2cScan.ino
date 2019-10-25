@@ -75,6 +75,7 @@ void loop() {
 
   nDevices = 0;
 
+  // Most of this loop ripped off from Arduino Playground.
   for (address = 0; address < 128; address++) {
 
     Wire.beginTransmission(address);
@@ -172,21 +173,27 @@ void preamble(void) {
   delay(2000);
 }
 
-// Supposedly the definitive way to reboot an ATTiny85
-// cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
+// Supposedly the definitive way to reboot an ATTiny85.
+// Cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
 // Not really essential, but revisits startup routines
 // and causes initial information to redisplay.
 // Could also tie a spare output pin to reset....
-// Also could just trap the sparks and have a button?
+// Also could just trap the sparks and have a button for the user?
 void reboot(void) {
   cli();                        // suppress interrupts when touching WDIF
   // (WD)IF  IE  P3  CE  DE  P2  P1  P0            refer "Watchdog Timer
   //      1   1   0   1   1   0   0   0            Control Register"
   WDTCR = 0b11011000 | WDTO_1S; // (WDTO_1S = 6 = 110)
   // Now, we need to follow up if that WDTO value has "taken" and make
-  // sure it is not just using the old one ? Changes are supposed to be
+  // sure it is not just using the old one? Changes are supposed to be
   // a multi-step process? Further, after 15 years or more why does the 
   // stock wdt.h not work? Anybody?  The above approach from bigdanzblog.
+  
+  // Note also that values 8,9 for 4s and 8s will not work. This is stated
+  // in wdt.h and is because P3 is an "island". See datasheet table.
+  // They can only be used with wdt_enable() which is broken for the ATTiny85
+  // anyway?
+  
   sei();                        // interrupts back on
   wdt_reset();                  // not needed if we are forcing it?
   while (true) {}               // trap the PC (sparks?) and wait.
@@ -217,8 +224,8 @@ void clear_LCD(void) {
 // to specify that characters for writing to a particular
 // location are to follow. Note order of r,c as may not
 // follow the usual convention for LCD displays? (reversed?).
-// Also not that unusual for serial communication to have
-// have beginTransmission..endTransmission.
+// Also it is not that unusual for serial communication to 
+// have beginTransmission..endTransmission anyway?
 void beginLCDWrite(uint8_t r, uint8_t c) {
   serLCD.write(0xAA);
   serLCD.write(0x20);
