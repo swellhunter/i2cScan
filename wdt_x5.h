@@ -21,11 +21,11 @@
 // R16 is assumed pushed for stack frame. 
 // AVR Studio 7 toolchain code was the prototype for this style.
 
-//    in R16,SREG                          ; stash SREG
+//    in R16, SREG                         ; stash SREG
 //    cli                                  ; disable interrupts
 //    wdr                                  ; watchdog reset
 //    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9
-//    out SREG,  R16 ; restore SREG        ; put SREG back
+//    out SREG, R16                        ; put SREG back
 
 #define wdt_enable(value) \
 __asm__ __volatile__ ( \
