@@ -18,54 +18,13 @@
 ******************************************************/
 
 /* Includes */
-// ATTiny85 will require pull-up resistors,
+// ATTiny85 will require pull up resistors,
 // but said resistors will cause hang after
 // programming. Device needs to be reset
 // or cycled after programming to run.
 #include <Wire.h>
 #include <avr/wdt.h>
-
-#ifdef wdt_enable
-   #undef wdt_enable
-#endif
-
-// Alrighty then. ATTiny85 does not have a CCP register.
-// There is no "good" wdt_enable() defined in avr/wdt.h 
-// See WDTCR section in datasheet for the 'x' values.
-// Still need to test for "one punch" effectiveness ala bigdanzblog. Datasheet concerns disable.
-// https://bigdanzblog.wordpress.com/2015/07/20/resetting-rebooting-attiny85-with-watchdog-timer-wdt/
-// 15 Years and nobody has fixed this.
-// Of course it would be a lot simpler, but less portable to redefine WDTO_4S and WDTO_8S
-
-// WDIF  WDIE  WDP3  WDCE  WDE  WDP2  WDP1  WDP0    refer "Watchdog Timer
-//   1     1     0     1     1    0     0     0     Control Register"
-
-//---------------------------------------------------------------------------------------------------
-//    in Rnn,SREG                          ; stash SREG
-//    cli                                  ; disable interrupts
-//    wdr                                  ; watchdog reset
-//    out WDTCR, 0b11011000                ; change enable "0xD8", redundant? 4 x _BV() maybe ?
-//    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9, see wdt.h, datasheet 
-//    out SREG,  Rnn ; restore SREG        ; put SREG back
-//---------------------------------------------------------------------------------------------------
-
-#define wdt_enable(value) \
-__asm__ __volatile__ ( \
-    "in __tmp_reg__,__SREG__" "\n\t"  \
-    "cli" "\n\t"  \
-    "wdr" "\n\t"  \
-    "out %[WDTREG],%[SIGNATURE]" "\n\t"  \
-    "out %[WDTREG],%[WDVALUE]" "\n\t"  \
-    "out __SREG__,__tmp_reg__" "\n\t"  \
-    : /* no outputs */  \
-    : [SIGNATURE] "r" ((uint8_t)0xD8), \
-      [WDTREG] "I" (_SFR_IO_ADDR(_WD_CONTROL_REG)), \
-      [WDVALUE] "r" ((uint8_t)(0xD8 \
-      | (value & 0x08 ? _WD_PS3_MASK : 0x00) \
-      | _BV(WDE) | (value & 0x07) )) \
-    : "r16" \
-)
-
+#include "wdt_x5.h"
 #include <SendOnlySoftwareSerial.h>
 
 /* Globals - well "ours" anyway */
@@ -76,8 +35,6 @@ unsigned int   baud      = 9600;
 unsigned short intensity = 63;
 unsigned short loopcount = 0;
 
-// This is the ubiquitous Arduino setup function
-// It is called once per reboot.  
 void setup() {
   wdt_reset();
   // Spence Konde recommends, could save first.
@@ -90,23 +47,17 @@ void setup() {
   preamble();
 }
 
-// And this is the main Arduino loop that is 
-// executed indefinitely, the stack is already 
-// down about 8 bytes when we get in here.
 void loop() {
 
   byte error, address;
   int nDevices;
-  char all[17] = ""; // one whole line, right ?
-  char buff[3] = ""; // hold two hex characters.
+  char all[17] = "";
+  char buff[3] = "";
 
-  loopcount++;       // do it here, not miles away. 
+  loopcount++;
 
-  // In theory we have a spare PortB pin to run 
-  // a piezo buzzer to remind people to switch 
-  // off after 4 cycles, ala fridge door and 
-  // then reset after a delay.  
-  if (loopcount > 4) {
+  if (loopcount > 3) {
+    loopcount = 0;
     reboot();
   }
 
@@ -117,15 +68,16 @@ void loop() {
 
   nDevices = 0;
 
-  // Most of this loop ripped off from Arduino Playground.
   for (address = 0; address < 128; address++) {
 
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
 
-    if (error == 0) { // knock was answered
+    if (error == 0) {
 
-      if (nDevices) { // separate with commas
+      // knock was answered
+
+      if (nDevices) {
         strcat(all, ",");
       }
       else {
@@ -149,7 +101,10 @@ void loop() {
       clear_LCD_line2();
     }
 
-    else if (error == 4) {   // not good
+    else if (error == 4) {
+
+      // not good
+
       beginLCDWrite(line2, 0);
       serLCD.print(F("Error at : 0x"));
       if (address < 16) {
@@ -215,30 +170,13 @@ void preamble(void) {
   delay(2000);
 }
 
-// Supposedly the definitive way to reboot an ATTiny85.
-// Cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
+// Supposedly the definitive way to reboot an ATTiny85
+// cleaner than SP=RAMEND;SREG=0;MCUSR=0;asm("rjmp 0")
 // Not really essential, but revisits startup routines
 // and causes initial information to redisplay.
-// Could also tie a spare output pin to reset....
-// Also could just trap the sparks and have a button for the user?
 void reboot(void) {
-  cli();                        // suppress interrupts when touching WDIF
-  // (WD)IF  IE  P3  CE  DE  P2  P1  P0            refer "Watchdog Timer
-  //      1   1   0   1   1   0   0   0            Control Register"
-  WDTCR = 0b11011000 | WDTO_1S; // (WDTO_1S = 6 = 110)
-  // Now, we need to follow up if that WDTO value has "taken" and make
-  // sure it is not just using the old one? Changes are supposed to be
-  // a multi-step process? Further, after 15 years or more why does the 
-  // stock wdt.h not work? Anybody?  The above approach from bigdanzblog.
-  
-  // Note also that values 8,9 for 4s and 8s will not work. This is stated
-  // in wdt.h and is because P3 is an "island". See datasheet table.
-  // They can only be used with wdt_enable() which is broken for the ATTiny85
-  // anyway?
-  
-  sei();                        // interrupts back on
-  wdt_reset();                  // not needed if we are forcing it?
-  while (true) {}               // trap the PC (sparks?) and wait.
+  wdt_enable(WDTO_1S); 
+  while (true);             
 }
 
 //---------------------------------------------------
@@ -266,8 +204,8 @@ void clear_LCD(void) {
 // to specify that characters for writing to a particular
 // location are to follow. Note order of r,c as may not
 // follow the usual convention for LCD displays? (reversed?).
-// Also it is not that unusual for serial communication to 
-// have beginTransmission..endTransmission anyway?
+// Also not that unusual for serial communication to have
+// have beginTransmission..endTransmission.
 void beginLCDWrite(uint8_t r, uint8_t c) {
   serLCD.write(0xAA);
   serLCD.write(0x20);
@@ -301,12 +239,8 @@ void clear_LCD_line2(void) {
   delay(500);
 }
 
-// Dump model and version (if any) of the LCD
-// display. Obviously we can see the colour,
-// and we know it is UART. The "K" means the 
-// keyboard/pad inputs will work (wasted here).
 void id_LCD(void) {
   serLCD.write(0xAA);
-  serLCD.write((uint8_t)0);  // note the "cast".
+  serLCD.write((uint8_t)0);
   delay(2000);
 }
