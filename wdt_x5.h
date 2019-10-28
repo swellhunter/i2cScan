@@ -25,7 +25,7 @@
 //    cli                                  ; disable interrupts
 //    wdr                                  ; watchdog reset
 //    out WDTCR, 0b11011000 | 0b00x00xxx   ; supply WDTO value but mind 8 and 9
-//    out SREG,  R26 ; restore SREG        ; put SREG back
+//    out SREG,  R16 ; restore SREG        ; put SREG back
 
 #define wdt_enable(value) \
 __asm__ __volatile__ ( \
