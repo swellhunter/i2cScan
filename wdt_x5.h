@@ -1,5 +1,5 @@
 /*******************************************************************************
- * wdt_x85.h : redefine wdt_enable()   https://github.com/swellhunter/blinkwdt 
+ * wdt_x5.h : redefine wdt_enable()   https://github.com/swellhunter/blinkwdt 
  * 
  * See WDTCR in full datasheet.
  * also avr/wdt.h from Atmel with Studio 7 for Windows.
