@@ -57,8 +57,6 @@ void loop() {
   int nDevices;
   char all[17] = ""; // one whole line, right ?
   char buff[3] = ""; // holds two hex characters.
-
-  wdt_reset();
   loopcount++;       // do it here, not miles away.
 
   // In theory we have a spare PortB pin to run
@@ -78,7 +76,6 @@ void loop() {
 
   // Most of this loop ripped off from Arduino Playground.
   for (address = 0; address < 128; address++) {
-    wdt_reset();
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
 
@@ -104,7 +101,6 @@ void loop() {
       serLCD.print(address, HEX);
       endLCDWrite();
       nDevices++;
-      wdt_reset();
       delay(1500);
       clear_LCD_line2();
     }
