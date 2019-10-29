@@ -19,13 +19,13 @@
 
 /* Includes */
 // ATTiny85 will require pull-up resistors,
-// but said resistors will cause hang after
+// but said resistors will cause issues after
 // programming. Device needs to be reset
-// or cycled after programming to run.
+// or cycled after programming to run
+// with disconnected programmer.
 #include <Wire.h>
 #include <avr/wdt.h>
 #include <SendOnlySoftwareSerial.h>
-#include "wdt_x5.h"
 
 /* Globals - well "ours" anyway */
 SendOnlySoftwareSerial serLCD(1);  // Tx pin
@@ -36,7 +36,7 @@ unsigned short intensity = 63;
 unsigned short loopcount = 0;
 
 // This is the ubiquitous Arduino setup function
-// It is called once per reboot.  
+// It is called once per reboot.
 void setup() {
   wdt_reset();
   MCUSR &= ~(1 << WDRF); // Spence Konde recommends, could save first.
@@ -48,22 +48,23 @@ void setup() {
   preamble();
 }
 
-// And this is the main Arduino loop that is 
-// executed indefinitely, the stack is already 
+// And this is the main Arduino loop that is
+// executed indefinitely, the stack is already
 // down about 8 bytes when we get in here.
 void loop() {
 
   byte error, address;
   int nDevices;
   char all[17] = ""; // one whole line, right ?
-  char buff[3] = ""; // hold two hex characters.
+  char buff[3] = ""; // holds two hex characters.
 
-  loopcount++;       // do it here, not miles away. 
+  wdt_reset();
+  loopcount++;       // do it here, not miles away.
 
-  // In theory we have a spare PortB pin to run 
-  // a piezo buzzer to remind people to switch 
-  // off after 4 cycles, ala fridge door and 
-  // then reset after a delay.  
+  // In theory we have a spare PortB pin to run
+  // a piezo buzzer to remind people to switch
+  // off after 4 cycles, ala fridge door and
+  // then reset after a delay.
   if (loopcount > 4) {
     reboot();
   }
@@ -77,7 +78,7 @@ void loop() {
 
   // Most of this loop ripped off from Arduino Playground.
   for (address = 0; address < 128; address++) {
-
+    wdt_reset();
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
 
@@ -103,6 +104,7 @@ void loop() {
       serLCD.print(address, HEX);
       endLCDWrite();
       nDevices++;
+      wdt_reset();
       delay(1500);
       clear_LCD_line2();
     }
@@ -124,6 +126,7 @@ void loop() {
     clear_LCD();
     beginLCDWrite(line1, 0);
     serLCD.print(F("No I2C devices!!"));
+    endLCDWrite();
   }
   else {
     delay(1000);
@@ -143,14 +146,11 @@ void loop() {
     }
 
     serLCD.print(F("."));
+    endLCDWrite();
   }
 
-  // this endLCDWrite() is for both branches above.
-  // it may need to be rescoped if more elaborate
-  // results blurb logic is required.
-  endLCDWrite();
-  delay(8000);
-  clear_LCD();
+  delay(8000); 
+  clear_LCD(); 
   delay(200);
 }
 
@@ -163,12 +163,12 @@ void loop() {
 void preamble(void) {
   id_LCD();
   clear_LCD();
-  beginLCDWrite(line1, 0);
-  serLCD.print(F("*** I2C Scan ***"));
+  beginLCDWrite(line1, 0); 
+  serLCD.print(F("*** I2C Scan ***")); 
   endLCDWrite();
   delay(1000);
-  beginLCDWrite(line2, 0);
-  serLCD.print(F("... stand by ..."));
+  beginLCDWrite(line2, 0); 
+  serLCD.print(F("... stand by ...")); 
   endLCDWrite();
   delay(2000);
 }
@@ -180,8 +180,8 @@ void preamble(void) {
 // Could also tie a spare output pin to reset....
 // Also could just trap the sparks and have a button for the user?
 void reboot(void) {
-  wdt_enable(WDTO_1S); 
-  while (true); 
+  wdt_enable(WDTO_1S);
+  while (true);
 }
 
 //---------------------------------------------------
@@ -209,7 +209,7 @@ void clear_LCD(void) {
 // to specify that characters for writing to a particular
 // location are to follow. Note order of r,c as may not
 // follow the usual convention for LCD displays? (reversed?).
-// Also it is not that unusual for serial communication to 
+// Also it is not that unusual for serial communication to
 // have beginTransmission..endTransmission anyway?
 void beginLCDWrite(uint8_t r, uint8_t c) {
   serLCD.write(0xAA);
@@ -246,7 +246,7 @@ void clear_LCD_line2(void) {
 
 // Dump model and version (if any) of the LCD
 // display. Obviously we can see the colour,
-// and we know it is UART. The "K" means the 
+// and we know it is UART. The "K" means the
 // keyboard/pad inputs will work (wasted here).
 void id_LCD(void) {
   serLCD.write(0xAA);
